@@ -1,0 +1,3 @@
+This is a directory for storing parameter data (model weights, etc.) to be used when evaluating models.
+The initial version contains four numpy files start with 'train' in their names, which are the features and labels for the two model types extracted from the training dataset.
+More features can be involved from data in configuration mode. These features will be overwritten if the configuration mode is running multiple times.

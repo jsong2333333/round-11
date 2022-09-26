@@ -1,0 +1,18 @@
+name: round_11
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.9
+  - jsonschema
+  - jsonargparse
+  - torchvision=0.13
+  - pytorch=1.12
+  - cudatoolkit=11.3
+  - opencv
+  - timm
+  - scikit-learn=1.1.1
+  - transformers
+  - pandas
