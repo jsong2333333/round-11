@@ -5,7 +5,8 @@ import json
 
 DATA_PATH = '/scratch/data/TrojAI/image-classification-sep2022-train/models/'
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
-WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
+WEIGHT_LENGTH_TO_MODEL_ARCH = {965: 'resnet50', 911: 'vit_base_patch32_224', 947:'mobilenet_v2'}
+OPTIMAL_LAYERS = {'resnet50': [48, 49], 'vit_base_patch32_224': [2, 25], 'mobilenet_v2': [35, 7]}
 
 
 def get_features_and_labels_by_model_class(dp, model_class):
@@ -19,6 +20,8 @@ def get_features_and_labels_by_model_class(dp, model_class):
             model_arch = _get_model_arch(json_filepath)
             if model_class == model_arch:
                 model_features = _get_weight_features(model_filepath)
+                model_eigens = _get_optimal_eigens(model_filepath, optimal_layers=OPTIMAL_LAYERS[model_arch])
+                model_features += model_eigens
                 model_label = _get_model_label(json_filepath)
                 ret_dir['X'].append(model_features)
                 ret_dir['y'].append(model_label)
@@ -30,6 +33,8 @@ def get_features_and_labels_by_model_class(dp, model_class):
 def get_predict_model_features_and_class(model_filepath):
     weight_features = _get_weight_features(model_filepath)
     model_class = WEIGHT_LENGTH_TO_MODEL_ARCH[len(weight_features)]
+    eigen_features = _get_optimal_eigens(model_filepath, optimal_layers=OPTIMAL_LAYERS[model_class])
+    weight_features += eigen_features
     return model_class, weight_features
 
 
@@ -67,7 +72,34 @@ def _get_weight_features(model_filepath):
             params.append(torch.median(param).tolist())
             params.append(param.sum().tolist())
             params.append((torch.linalg.norm(param.reshape(param.shape[0], -1), ord='fro')**2/torch.linalg.norm(param.reshape(param.shape[0], -1), ord=2)**2).tolist())
+    return params[:-1]
+
+
+def _get_optimal_eigens(model_filepath, optimal_layers=[]):
+    with torch.no_grad():
+        model = torch.load(model_filepath)
+    eigens = []
+    min_shape, layer_num = 1, 0
+    for param in model.parameters():
+        if len(param.shape) > min_shape:
+            layer_num += 1
+            if layer_num in optimal_layers:
+                reshaped_param = param.reshape(param.shape[0], -1)
+                singular_values = torch.linalg.svd(reshaped_param, False).S
+                squared_singular_values = torch.square(singular_values)
+                ssv = squared_singular_values.tolist()
+                eigens += ssv
+    eigens = np.array_split(eigens, 120)
+    params = []
+    for eig in eigens:
+        if eig.shape[-1] != 0:
+            params.append(eig.max())
+            params.append(eig.mean())
+            params.append((eig.mean() - np.median(eig)))
+            params.append(np.median(eig))
+            params.append(eig.sum())
     return params
+
 
 if __name__ =='__main__':
     EXTRACTED_DIR = '/scratch/jialin/image-classification-sep2022/projects/weight_analysis/for_container/learned_parameters/'

@@ -9,6 +9,14 @@ import os
 from sklearn.ensemble import GradientBoostingClassifier
 
 
+WEIGHT_LENGTH_TO_MODEL_ARCH = {965: 'resnet50', 911: 'vit_base_patch32_224', 947:'mobilenet_v2'}
+MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
+MODEL_ARCH_TO_LENGTH = {'resnet50': 1565, 'vit_base_patch32_224': 1511, 'mobilenet_v2': 1472}
+MODEL_ARCH_TO_CLASSIFIER = {MODEL_ARCH[0]: GradientBoostingClassifier(learning_rate=0.0075, n_estimators=800, max_depth=2, min_samples_split=30, min_samples_leaf=16, max_features=82),
+                            MODEL_ARCH[1]: GradientBoostingClassifier(learning_rate=0.0155, n_estimators=500, max_depth=3, min_samples_split=44, min_samples_leaf=2, max_features=55),
+                            MODEL_ARCH[2]: GradientBoostingClassifier(learning_rate=0.015, n_estimators=300, max_depth=6, min_samples_split=30, min_samples_leaf=16)}
+
+
 def weight_analysis_detector(model_filepath,
                             result_filepath,
                             round_training_dataset_dirpath,
@@ -51,7 +59,7 @@ def weight_analysis_detector(model_filepath,
         logging.info('No new learned parameters added, using only training dataset')
 
     # fit the features to classifiers
-    clf = GradientBoostingClassifier(n_estimators=1000, learning_rate=0.002)
+    clf = MODEL_ARCH_TO_CLASSIFIER[predict_model_class]
     clf.fit(X, y)
 
     try:
@@ -72,8 +80,6 @@ def configure(output_parameters_dirpath,
               configure_models_dirpath):
 
     logging.info('Configuring detector parameters with models from ' + configure_models_dirpath)
-    MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
-    MODEL_ARCH_TO_WEIGHT_LENGTH = {'resnet50': 966, 'vit_base_patch32_224': 912, 'mobilenet_v2': 948}
     try:
         MODEL_DICTS = {arch:fe.get_features_and_labels_by_model_class(configure_models_dirpath, arch) for arch in MODEL_ARCH}
     except:
@@ -86,7 +92,7 @@ def configure(output_parameters_dirpath,
 
     for k, v in MODEL_DICTS.items():
         X, y = v['X'], v['y']
-        if X.shape[0] != 0 and X.shape[0] == y.shape[0] and X.shape[1] == MODEL_ARCH_TO_WEIGHT_LENGTH[k]:
+        if X.shape[0] != 0 and X.shape[0] == y.shape[0] and X.shape[1] == MODEL_ARCH_TO_LENGTH[k]:
             np.save(os.path.join(output_parameters_dirpath, f'X_{k}.npy'), X)
             np.save(os.path.join(output_parameters_dirpath, f'y_{k}.npy'), y)
         else:
@@ -118,7 +124,6 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s")
     logging.info("classifier.py launched")
-    logging.info(args)
 
 
     # Validate config file against schema
