@@ -6,7 +6,8 @@ import json
 DATA_PATH = '/scratch/data/TrojAI/image-classification-sep2022-train/models/'
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
 WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
-OPTIMAL_LAYERS = {'resnet50': [48, 49], 'vit_base_patch32_224': [2, 25], 'mobilenet_v2': [35, 7]}
+MODEL_ARCH_TO_FEATURE_LENGTH = {'resnet50': 1231, 'vit_base_patch32_224': 1167, 'mobilenet_v2': 1208}
+# OPTIMAL_LAYERS = {'resnet50': [48, 49], 'vit_base_patch32_224': [2, 25], 'mobilenet_v2': [35, 7]}
 
 
 def get_features_and_labels_by_model_class(dp, model_class):
@@ -20,8 +21,8 @@ def get_features_and_labels_by_model_class(dp, model_class):
             model_arch = _get_model_arch(json_filepath)
             if model_class == model_arch:
                 model_features = _get_weight_features(model_filepath)
-                # model_eigens = _get_optimal_eigens(model_filepath, optimal_layers=OPTIMAL_LAYERS[model_arch])
-                # model_features += model_eigens
+                model_eigens = _get_eigen_features(model_filepath)
+                model_features += model_eigens
                 model_label = _get_model_label(json_filepath)
                 ret_dir['X'].append(model_features)
                 ret_dir['y'].append(model_label)
@@ -33,8 +34,8 @@ def get_features_and_labels_by_model_class(dp, model_class):
 def get_predict_model_features_and_class(model_filepath):
     weight_features = _get_weight_features(model_filepath)
     model_class = WEIGHT_LENGTH_TO_MODEL_ARCH[len(weight_features)]
-    # eigen_features = _get_optimal_eigens(model_filepath, optimal_layers=OPTIMAL_LAYERS[model_class])
-    # weight_features += eigen_features
+    eigen_features = _get_eigen_features(model_filepath)
+    weight_features += eigen_features
     return model_class, weight_features
 
 
@@ -72,6 +73,23 @@ def _get_weight_features(model_filepath):
             params.append(torch.median(param).tolist())
             params.append(param.sum().tolist())
             params.append((torch.linalg.norm(param.reshape(param.shape[0], -1), ord='fro')**2/torch.linalg.norm(param.reshape(param.shape[0], -1), ord=2)**2).tolist())
+    return params
+
+
+def _get_eigen_features(model_filepath):
+    with torch.no_grad():
+        model = torch.load(model_filepath)
+    min_shape, params = 1, []
+    for param in model.parameters():
+        if len(param.shape) > min_shape:
+            reshaped_param = param.reshape(param.shape[0], -1)
+            singular_values = torch.linalg.svd(reshaped_param, False).S
+            ssv = torch.square(singular_values)
+            params.append(ssv.max().tolist())
+            params.append(ssv.mean().tolist())
+            params.append((ssv.mean() - torch.median(ssv)).tolist())
+            params.append(torch.median(ssv).tolist())
+            params.append(ssv.sum().tolist())
     return params
 
 

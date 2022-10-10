@@ -12,7 +12,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
 # MODEL_ARCH_TO_LENGTH = {'resnet50': 1566, 'vit_base_patch32_224': 1512, 'mobilenet_v2': 1473}
-MODEL_ARCH_TO_LENGTH = {'resnet50': 966, 'vit_base_patch32_224': 912, 'mobilenet_v2': 948}
+MODEL_ARCH_TO_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 1213}
 MODEL_ARCH_TO_CLASSIFIER = {MODEL_ARCH[0]: GradientBoostingClassifier(learning_rate=0.0075, n_estimators=800, max_depth=2, min_samples_split=30, min_samples_leaf=16, max_features=82),
                             MODEL_ARCH[1]: GradientBoostingClassifier(learning_rate=0.0155, n_estimators=500, max_depth=3, min_samples_split=44, min_samples_leaf=2, max_features=55),
                             MODEL_ARCH[2]: GradientBoostingClassifier(learning_rate=0.015, n_estimators=300, max_depth=6, min_samples_split=30, min_samples_leaf=16)}
