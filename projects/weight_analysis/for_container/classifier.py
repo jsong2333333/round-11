@@ -8,14 +8,30 @@ import jsonschema
 import os
 from sklearn.ensemble import GradientBoostingClassifier
 
+class Net(torch.nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.fc1 = torch.nn.Linear(948, 128) # hidden layer
+        self.fc2 = torch.nn.Linear(128, 32) # hidden layer
+        self.fc4 = torch.nn.Linear(32, 1)   # ouput layer
+
+        self.drop = torch.nn.Dropout(p=0.1, inplace=False)
+
+    def forward(self, x):
+        x = self.drop(x)
+        x = torch.nn.functional.relu(self.fc1(x))
+        x = torch.nn.functional.relu(self.fc2(x))
+        x = self.fc4(x)
+        return x
+
 
 WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
 # MODEL_ARCH_TO_LENGTH = {'resnet50': 1566, 'vit_base_patch32_224': 1512, 'mobilenet_v2': 1473}
-MODEL_ARCH_TO_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 1213}
+MODEL_ARCH_TO_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 948}
 MODEL_ARCH_TO_CLASSIFIER = {MODEL_ARCH[0]: GradientBoostingClassifier(learning_rate=0.007, n_estimators=1100, max_depth=3, min_samples_split=20, min_samples_leaf=14, max_features=130),
                             MODEL_ARCH[1]: GradientBoostingClassifier(learning_rate=0.0135, n_estimators=500, max_depth=4, min_samples_split=46, min_samples_leaf=6, max_features=32),
-                            MODEL_ARCH[2]: GradientBoostingClassifier(learning_rate=0.015, n_estimators=300, max_depth=3, min_samples_split=38, min_samples_leaf=16, max_features=72)}
+                            MODEL_ARCH[2]: Net()}
 
 
 def weight_analysis_detector(model_filepath,
@@ -34,42 +50,57 @@ def weight_analysis_detector(model_filepath,
     # extract class and features from predict model
     predict_model_class, predict_model_features = fe.get_predict_model_features_and_class(model_filepath)
     predict_model_features = np.asarray([predict_model_features])
-    
-    # extract features for models in image-classification-sep2022, should be shape (96, 967), (96, 913), (96, 949)
-    X_filepath = os.path.join(parameters_dirpath, f'train_X_{predict_model_class}.npy')
-    y_filepath = os.path.join(parameters_dirpath, f'train_y_{predict_model_class}.npy')
-    if os.path.exists(X_filepath) and os.path.exists(y_filepath):
-        X = np.load(X_filepath)
-        y = np.load(y_filepath)
-    else:
-        logging.info('Need to extract features from training dataset')
-        trainig_models_class_and_features = fe.get_features_and_labels_by_model_class(round_training_dataset_dirpath, predict_model_class)
-        X = trainig_models_class_and_features['X']
-        y = trainig_models_class_and_features['y']
-
-    # load learned parameters from parameter_dirpath
-    extra_X_filepath = os.path.join(parameters_dirpath, f'X_{predict_model_class}.npy')
-    extra_y_filepath = os.path.join(parameters_dirpath, f'y_{predict_model_class}.npy')
-    if os.path.exists(extra_X_filepath) and os.path.exists(extra_y_filepath):
-        extra_X = np.load(extra_X_filepath)
-        extra_y = np.load(extra_y_filepath)
-        if X.shape[1] == extra_X.shape[1] and extra_X.shape[0] == extra_y.shape[0]:  #double check features and labels are extracted properly
-            X = np.concatenate((X, extra_X), axis=0)
-            y = np.concatenate((y, extra_y), axis=0)
-    else:
-        logging.info('No new learned parameters added, using only training dataset')
-
-    # fit the features to classifiers
     clf = MODEL_ARCH_TO_CLASSIFIER[predict_model_class]
-    clf.fit(X, y)
+    
+    if predict_model_class in MODEL_ARCH[:2]:
+        # extract features for models in image-classification-sep2022
+        X_filepath = os.path.join(parameters_dirpath, f'train_X_{predict_model_class}.npy')
+        y_filepath = os.path.join(parameters_dirpath, f'train_y_{predict_model_class}.npy')
+        if os.path.exists(X_filepath) and os.path.exists(y_filepath):
+            X = np.load(X_filepath)
+            y = np.load(y_filepath)
+        else:
+            logging.info('Need to extract features from training dataset')
+            trainig_models_class_and_features = fe.get_features_and_labels_by_model_class(round_training_dataset_dirpath, predict_model_class)
+            X = trainig_models_class_and_features['X']
+            y = trainig_models_class_and_features['y']
 
-    try:
-        trojan_probability = clf.predict_proba(predict_model_features)
-    except:
-        logging.warning('Not able to detect such model class')
-        with open(result_filepath, 'w') as fh:
-            fh.write("{}".format(0.50))
-        return
+        # load learned parameters from parameter_dirpath
+        extra_X_filepath = os.path.join(parameters_dirpath, f'X_{predict_model_class}.npy')
+        extra_y_filepath = os.path.join(parameters_dirpath, f'y_{predict_model_class}.npy')
+        if os.path.exists(extra_X_filepath) and os.path.exists(extra_y_filepath):
+            extra_X = np.load(extra_X_filepath)
+            extra_y = np.load(extra_y_filepath)
+            if X.shape[1] == extra_X.shape[1] and extra_X.shape[0] == extra_y.shape[0]:  #double check features and labels are extracted properly
+                X = np.concatenate((X, extra_X), axis=0)
+                y = np.concatenate((y, extra_y), axis=0)
+        else:
+            logging.info('No new learned parameters added, using only training dataset')
+
+        # fit the features to classifiers     
+        clf.fit(X, y)
+        try:
+            trojan_probability = clf.predict_proba(predict_model_features)
+        except:
+            logging.warning('Not able to detect such model class')
+            with open(result_filepath, 'w') as fh:
+                fh.write("{}".format(0.50))
+            return
+    else:
+        state_dict_filepath = os.path.join(parameters_dirpath, 'mbnet_classifier.pt')
+        if os.path.exists(state_dict_filepath):
+            clf.load_state_dict(torch.load(state_dict_filepath))
+            clf.eval()
+            predict_model_features = torch.Tensor(predict_model_features)
+            pred = clf(predict_model_features)
+            sig = torch.nn.Sigmoid()
+            trojan_probability = sig(pred).detach().numpy()
+        else:
+            logging.warning('Not able to detect such model class')
+            with open(result_filepath, 'w') as fh:
+                fh.write("{}".format(0.50))
+            return
+
 
     logging.info('Trojan Probability of this class {} model is: {}'.format(predict_model_class, trojan_probability[0, -1]))
     
