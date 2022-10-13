@@ -15,8 +15,7 @@ class Net(torch.nn.Module):
         self.fc2 = torch.nn.Linear(128, 32) # hidden layer
         self.fc4 = torch.nn.Linear(32, 1)   # ouput layer
 
-        self.drop = torch.nn.Dropout(p=0.1, inplace=False)
-
+        self.drop = torch.nn.Dropout(p=0.15, inplace=False)
     def forward(self, x):
         x = self.drop(x)
         x = torch.nn.functional.relu(self.fc1(x))
@@ -87,9 +86,10 @@ def weight_analysis_detector(model_filepath,
                 fh.write("{}".format(0.50))
             return
     else:
-        state_dict_filepath = os.path.join(parameters_dirpath, 'mbnet_classifier.pt')
+        state_dict_filepath = os.path.join(parameters_dirpath, 'mbnet_classifier.pkl')
         if os.path.exists(state_dict_filepath):
-            clf.load_state_dict(torch.load(state_dict_filepath))
+            # clf.load_state_dict(torch.load(state_dict_filepath))
+            clf = torch.load(state_dict_filepath)
             clf.eval()
             predict_model_features = torch.Tensor(predict_model_features)
             pred = clf(predict_model_features)
