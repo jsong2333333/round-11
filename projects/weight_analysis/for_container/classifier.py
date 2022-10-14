@@ -36,12 +36,14 @@ MODEL_ARCH_TO_CLASSIFIER = {MODEL_ARCH[0]: GradientBoostingClassifier(learning_r
 def weight_analysis_detector(model_filepath,
                             result_filepath,
                             round_training_dataset_dirpath,
-                            parameters_dirpath):
+                            parameters_dirpath,
+                            lambd):
 
     logging.info('model_filepath = {}'.format(model_filepath))
     logging.info('result_filepath = {}'.format(result_filepath))
     logging.info('Using round_training_dataset_dirpath = {}'.format(round_training_dataset_dirpath))
     logging.info('Using parameters_dirpath = {}'.format(parameters_dirpath))
+    logging.info('Setting temperature variable (parameter1) = {}'.format(lambd))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info("Using compute device: {}".format(device))
@@ -93,8 +95,11 @@ def weight_analysis_detector(model_filepath,
             clf.eval()
             predict_model_features = torch.Tensor(predict_model_features)
             pred = clf(predict_model_features)
+
             sig = torch.nn.Sigmoid()
-            trojan_probability = sig(pred).detach().numpy()
+            softshrink = torch.nn.Softshrink(lambd=lambd)
+            trojan_probability = softshrink(sig(pred) - 0.5) + 0.5
+            trojan_probability = trojan_probability.detach().numpy()
         else:
             logging.warning('Not able to detect such model class')
             with open(result_filepath, 'w') as fh:
@@ -149,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--configure_models_dirpath', type=str, help='Path to a directory containing models to use when in configure mode.')
 
     # these parameters need to be defined here, but their values will be loaded from the json file instead of the command line
-    # parser.add_argument('--parameter1', type=float, help='Tunable temperature variable for SSD model prediction only.')
+    parser.add_argument('--parameter1', type=float, help='Tunable temperature variable for SSD model prediction only.')
 
     args = parser.parse_args()
 
@@ -172,7 +177,12 @@ if __name__ == '__main__':
             jsonschema.validate(instance=config_json, schema=schema_json)
 
 
-    logging.info('Currently no tunable variables.')
+    default_lambd = 0.01
+    if config_json is not None and config_json["parameter1"] is not None:
+        default_lambd = config_json["parameter1"]
+        logging.info('Setting lambd variable (parameter1) from metaparemeter.json')
+    elif args.parameter1 is not None:
+        default_lambd = args.parameter1
 
 
     if not args.configure_mode:
@@ -187,7 +197,8 @@ if __name__ == '__main__':
             weight_analysis_detector(args.model_filepath,
                                     args.result_filepath,
                                     args.round_training_dataset_dirpath,
-                                    args.learned_parameters_dirpath)
+                                    args.learned_parameters_dirpath,
+                                    default_lambd)
         else:
             logging.info("Required Evaluation-Mode parameters missing!")
     else:
