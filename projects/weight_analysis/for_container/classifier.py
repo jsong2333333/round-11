@@ -88,7 +88,7 @@ def weight_analysis_detector(model_filepath,
                 fh.write("{}".format(0.50))
             return
     else:
-        state_dict_filepath = os.path.join(parameters_dirpath, 'mbnet_classifier.pkl')
+        state_dict_filepath = os.path.join(parameters_dirpath, 'nn_model.pkl')
         if os.path.exists(state_dict_filepath):
             # clf.load_state_dict(torch.load(state_dict_filepath))
             clf = torch.load(state_dict_filepath)
