@@ -3,7 +3,7 @@
   "title": "Trojan Detection Container (ICSI) - currently no metaparameter included",
   "technique": "Feature Extraction - weight analysis",
   "technique_description": "Extracting statistics from parameters and eigen values for each model; Training the features on the Neural Network for Mobile net and tuned Gradient Boosting Classifiers for the other two types.",
-  "technique_changes": "Changing hyperparameter for SoftShrink and the Neural Network for MobileNetv2",
+  "technique_changes": "Updated trained NN model for MobileNetv2",
   "commit_id": "",
   "repo_name": "https://github.com/jsong2333333/round-11.git",
   "required": ["parameter1"],
