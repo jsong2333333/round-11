@@ -21,9 +21,9 @@ def get_features_and_labels_by_model_class(dp, model_class):
             model_arch = _get_model_arch(json_filepath)
             if model_class == model_arch:
                 model_features = _get_weight_features(model_filepath)
-                if model_class in MODEL_ARCH[:2]:
-                    model_eigens = _get_eigen_features(model_filepath)
-                    model_features += model_eigens
+                # if model_class in MODEL_ARCH[:2]:
+                model_eigens = _get_eigen_features(model_filepath)
+                model_features += model_eigens
                 model_label = _get_model_label(json_filepath)
                 ret_dir['X'].append(model_features)
                 ret_dir['y'].append(model_label)
@@ -35,9 +35,9 @@ def get_features_and_labels_by_model_class(dp, model_class):
 def get_predict_model_features_and_class(model_filepath):
     weight_features = _get_weight_features(model_filepath)
     model_class = WEIGHT_LENGTH_TO_MODEL_ARCH[len(weight_features)]
-    if model_class in MODEL_ARCH[:2]:
-        eigen_features = _get_eigen_features(model_filepath)
-        weight_features += eigen_features
+    # if model_class in MODEL_ARCH[:2]:
+    eigen_features = _get_eigen_features(model_filepath)
+    weight_features += eigen_features
     return model_class, weight_features
 
 
