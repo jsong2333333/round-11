@@ -6,7 +6,7 @@ import json
 DATA_PATH = '/scratch/data/TrojAI/image-classification-sep2022-train/models/'
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
 WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
-MODEL_ARCH_TO_FEATURE_LENGTH = {'resnet50': 1231, 'vit_base_patch32_224': 1167, 'mobilenet_v2': 1208}
+MODEL_ARCH_TO_FEATURE_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 1213}
 # OPTIMAL_LAYERS = {'resnet50': [48, 49], 'vit_base_patch32_224': [2, 25], 'mobilenet_v2': [35, 7]}
 
 

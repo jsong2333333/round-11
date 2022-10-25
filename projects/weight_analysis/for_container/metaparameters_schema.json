@@ -2,21 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Trojan Detection Container (ICSI) - currently no metaparameter included",
   "technique": "Feature Extraction - weight analysis",
-  "technique_description": "Extracting statistics from parameters and eigen values for each model; Training the features on the Neural Network for Mobile net and tuned Gradient Boosting Classifiers for the other two types.",
-  "technique_changes": "Updated trained NN model for MobileNetv2",
+  "technique_description": "Extracting statistics from parameters and eigen values for each model and perform data augmentation for vit and mobilenet model features; Training the features on the tuned Gradient Boosting Classifiers.",
+  "technique_changes": "Perform data augmentation on features extracted from vit and mobilenet architectures; delete hyperparameter for the previous classifier",
   "commit_id": "",
   "repo_name": "https://github.com/jsong2333333/round-11.git",
-  "required": ["parameter1"],
+  "required": [],
   "additionalProperties": false,
   "type": "object",
-  "properties": {
-    "parameter1": {
-      "description": "lambd variable for constraining the prediction from Neural Network trained for MobileNet classification",
-      "type": "number",
-      "minimum": 0,
-      "maximum": 0.5,
-      "suggested_minimum":0.01,
-      "suggested_maximum":0.15
-    }
-  }
+  "properties": {}
 }

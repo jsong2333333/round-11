@@ -26,24 +26,23 @@ class Net(torch.nn.Module):
 
 WEIGHT_LENGTH_TO_MODEL_ARCH = {966: 'resnet50', 912: 'vit_base_patch32_224', 948:'mobilenet_v2'}
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
-# MODEL_ARCH_TO_LENGTH = {'resnet50': 1566, 'vit_base_patch32_224': 1512, 'mobilenet_v2': 1473}
-MODEL_ARCH_TO_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 948}
+MODEL_ARCH_TO_LENGTH = {'resnet50': 1236, 'vit_base_patch32_224': 1172, 'mobilenet_v2': 1213}
 MODEL_ARCH_TO_CLASSIFIER = {MODEL_ARCH[0]: GradientBoostingClassifier(learning_rate=0.007, n_estimators=1100, max_depth=3, min_samples_split=20, min_samples_leaf=14, max_features=130),
                             MODEL_ARCH[1]: GradientBoostingClassifier(learning_rate=0.0135, n_estimators=500, max_depth=4, min_samples_split=46, min_samples_leaf=6, max_features=32),
-                            MODEL_ARCH[2]: Net()}
+                            MODEL_ARCH[2]: GradientBoostingClassifier(learning_rate=0.015, n_estimators=300, max_depth=3, min_samples_split=38, min_samples_leaf=16, max_features=72)}
 
 
 def weight_analysis_detector(model_filepath,
                             result_filepath,
                             round_training_dataset_dirpath,
-                            parameters_dirpath,
-                            lambd):
+                            parameters_dirpath):
+                            # , lambd):
 
     logging.info('model_filepath = {}'.format(model_filepath))
     logging.info('result_filepath = {}'.format(result_filepath))
     logging.info('Using round_training_dataset_dirpath = {}'.format(round_training_dataset_dirpath))
     logging.info('Using parameters_dirpath = {}'.format(parameters_dirpath))
-    logging.info('Setting temperature variable (parameter1) = {}'.format(lambd))
+    # logging.info('Setting temperature variable (parameter1) = {}'.format(lambd))
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info("Using compute device: {}".format(device))
@@ -53,58 +52,57 @@ def weight_analysis_detector(model_filepath,
     predict_model_features = np.asarray([predict_model_features])
     clf = MODEL_ARCH_TO_CLASSIFIER[predict_model_class]
     
-    if predict_model_class in MODEL_ARCH[:2]:
-        # extract features for models in image-classification-sep2022
-        X_filepath = os.path.join(parameters_dirpath, f'train_X_{predict_model_class}.npy')
-        y_filepath = os.path.join(parameters_dirpath, f'train_y_{predict_model_class}.npy')
-        if os.path.exists(X_filepath) and os.path.exists(y_filepath):
-            X = np.load(X_filepath)
-            y = np.load(y_filepath)
-        else:
-            logging.info('Need to extract features from training dataset')
-            trainig_models_class_and_features = fe.get_features_and_labels_by_model_class(round_training_dataset_dirpath, predict_model_class)
-            X = trainig_models_class_and_features['X']
-            y = trainig_models_class_and_features['y']
-
-        # load learned parameters from parameter_dirpath
-        extra_X_filepath = os.path.join(parameters_dirpath, f'X_{predict_model_class}.npy')
-        extra_y_filepath = os.path.join(parameters_dirpath, f'y_{predict_model_class}.npy')
-        if os.path.exists(extra_X_filepath) and os.path.exists(extra_y_filepath):
-            extra_X = np.load(extra_X_filepath)
-            extra_y = np.load(extra_y_filepath)
-            if X.shape[1] == extra_X.shape[1] and extra_X.shape[0] == extra_y.shape[0]:  #double check features and labels are extracted properly
-                X = np.concatenate((X, extra_X), axis=0)
-                y = np.concatenate((y, extra_y), axis=0)
-        else:
-            logging.info('No new learned parameters added, using only training dataset')
-
-        # fit the features to classifiers     
-        clf.fit(X, y)
-        try:
-            trojan_probability = clf.predict_proba(predict_model_features)
-        except:
-            logging.warning('Not able to detect such model class')
-            with open(result_filepath, 'w') as fh:
-                fh.write("{}".format(0.50))
-            return
+    # extract features for models in image-classification-sep2022
+    X_filepath = os.path.join(parameters_dirpath, f'train_X_{predict_model_class}.npy')
+    y_filepath = os.path.join(parameters_dirpath, f'train_y_{predict_model_class}.npy')
+    if os.path.exists(X_filepath) and os.path.exists(y_filepath):
+        X = np.load(X_filepath)
+        y = np.load(y_filepath)
     else:
-        state_dict_filepath = os.path.join(parameters_dirpath, 'nn_model.pkl')
-        if os.path.exists(state_dict_filepath):
-            # clf.load_state_dict(torch.load(state_dict_filepath))
-            clf = torch.load(state_dict_filepath)
-            clf.eval()
-            predict_model_features = torch.Tensor(predict_model_features)
-            pred = clf(predict_model_features)
+        logging.info('Need to extract features from training dataset')
+        trainig_models_class_and_features = fe.get_features_and_labels_by_model_class(round_training_dataset_dirpath, predict_model_class)
+        X = trainig_models_class_and_features['X']
+        y = trainig_models_class_and_features['y']
 
-            sig = torch.nn.Sigmoid()
-            softshrink = torch.nn.Softshrink(lambd=lambd)
-            trojan_probability = softshrink(sig(pred) - 0.5) + 0.5
-            trojan_probability = trojan_probability.detach().numpy()
-        else:
-            logging.warning('Not able to detect such model class')
-            with open(result_filepath, 'w') as fh:
-                fh.write("{}".format(0.50))
-            return
+    # load learned parameters from parameter_dirpath
+    extra_X_filepath = os.path.join(parameters_dirpath, f'X_{predict_model_class}.npy')
+    extra_y_filepath = os.path.join(parameters_dirpath, f'y_{predict_model_class}.npy')
+    if os.path.exists(extra_X_filepath) and os.path.exists(extra_y_filepath):
+        extra_X = np.load(extra_X_filepath)
+        extra_y = np.load(extra_y_filepath)
+        if X.shape[1] == extra_X.shape[1] and extra_X.shape[0] == extra_y.shape[0]:  #double check features and labels are extracted properly
+            X = np.concatenate((X, extra_X), axis=0)
+            y = np.concatenate((y, extra_y), axis=0)
+    else:
+        logging.info('No new learned parameters added, using only training dataset')
+
+    # fit the features to classifiers     
+    clf.fit(X, y)
+    try:
+        trojan_probability = clf.predict_proba(predict_model_features)
+    except:
+        logging.warning('Not able to detect such model class')
+        with open(result_filepath, 'w') as fh:
+            fh.write("{}".format(0.50))
+        return
+
+        # state_dict_filepath = os.path.join(parameters_dirpath, 'nn_model.pkl')
+        # if os.path.exists(state_dict_filepath):
+        #     # clf.load_state_dict(torch.load(state_dict_filepath))
+        #     clf = torch.load(state_dict_filepath)
+        #     clf.eval()
+        #     predict_model_features = torch.Tensor(predict_model_features)
+        #     pred = clf(predict_model_features)
+
+        #     sig = torch.nn.Sigmoid()
+        #     softshrink = torch.nn.Softshrink(lambd=lambd)
+        #     trojan_probability = softshrink(sig(pred) - 0.5) + 0.5
+        #     trojan_probability = trojan_probability.detach().numpy()
+        # else:
+        #     logging.warning('Not able to detect such model class')
+        #     with open(result_filepath, 'w') as fh:
+        #         fh.write("{}".format(0.50))
+        #     return
 
 
     logging.info('Trojan Probability of this class {} model is: {}'.format(predict_model_class, trojan_probability[0, -1]))
@@ -154,7 +152,7 @@ if __name__ == '__main__':
     parser.add_argument('--configure_models_dirpath', type=str, help='Path to a directory containing models to use when in configure mode.')
 
     # these parameters need to be defined here, but their values will be loaded from the json file instead of the command line
-    parser.add_argument('--parameter1', type=float, help='Tunable temperature variable for SSD model prediction only.')
+    # parser.add_argument('--parameter1', type=float, help='Tunable temperature variable for SSD model prediction only.')
 
     args = parser.parse_args()
 
@@ -177,12 +175,12 @@ if __name__ == '__main__':
             jsonschema.validate(instance=config_json, schema=schema_json)
 
 
-    default_lambd = 0.01
-    if config_json is not None and config_json["parameter1"] is not None:
-        default_lambd = config_json["parameter1"]
-        logging.info('Setting lambd variable (parameter1) from metaparemeter.json')
-    elif args.parameter1 is not None:
-        default_lambd = args.parameter1
+    # default_lambd = 0.01
+    # if config_json is not None and config_json["parameter1"] is not None:
+    #     default_lambd = config_json["parameter1"]
+    #     logging.info('Setting lambd variable (parameter1) from metaparemeter.json')
+    # elif args.parameter1 is not None:
+    #     default_lambd = args.parameter1
 
 
     if not args.configure_mode:
@@ -197,8 +195,8 @@ if __name__ == '__main__':
             weight_analysis_detector(args.model_filepath,
                                     args.result_filepath,
                                     args.round_training_dataset_dirpath,
-                                    args.learned_parameters_dirpath,
-                                    default_lambd)
+                                    args.learned_parameters_dirpath)
+                                    # , default_lambd)
         else:
             logging.info("Required Evaluation-Mode parameters missing!")
     else:
