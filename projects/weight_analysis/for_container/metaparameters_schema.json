@@ -2,12 +2,164 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Trojan Detection Container (ICSI) - currently no metaparameter included",
   "technique": "Feature Extraction - weight analysis",
-  "technique_description": "Extracting the aggregated weight features per 2d layer or per channel per 3d layer for each model; Extracting eigen values with tested optimal layers; Training the features on the tuned Gradient Boosting Classifiers.",
-  "technique_changes": "Added aggregated eigen values in targeted layers and tuned classifiers based on each model architecture",
+  "technique_description": "Extracting statistics from parameters and eigen values for each model and perform data augmentation for vit and mobilenet model features; Training the features on the tuned Gradient Boosting Classifiers.",
+  "technique_changes": "Restructure the code, mainly for specifiying configuration mode",
   "commit_id": "",
   "repo_name": "https://github.com/jsong2333333/round-11.git",
-  "required": [],
+  "required": ["augment_train_data", "automatic_training"],
   "additionalProperties": false,
   "type": "object",
-  "properties": {}
+  "properties": {
+    "augment_train_data": {
+      "description": "For reconfiguration mode, whether to augment the training data with the training dataset or not",
+      "type": "boolean"
+      },
+    "automatic_training": {
+      "description": "For reconfiguration mode, whether to auto-tune the classifiers or not",
+      "type": "boolean"
+      },
+    "resnet50_learning_rate": {
+      "description": "Tunable parameter learning_rate in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "number", 
+      "minimum": 0.001, 
+      "maximum": 1, 
+      "suggested_minimum": 0.005, 
+      "suggested_maximum": 0.05
+      }, 
+    "resnet50_max_depth": {
+      "description": "Tunable parameter max_depth in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 10, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 5
+      }, 
+    "resnet50_max_features": {
+      "description": "Tunable parameter max_features in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1100, 
+      "suggested_minimum": 20, 
+      "suggested_maximum": 220
+      }, 
+    "resnet50_min_samples_leaf": {
+      "description": "Tunable parameter min_samples_leaf in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1000, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 25
+      }, 
+    "resnet50_min_samples_split": {
+      "description": "Tunable parameter min_samples_split in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "integer", 
+      "minimum": 2, 
+      "maximum": 1000, 
+      "suggested_minimum": 10, 
+      "suggested_maximum": 50
+      }, 
+    "resnet50_n_estimators": {
+      "description": "Tunable parameter n_estimators in sklearn Gradient Boosting Classifier for model architecture classification:resnet50", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 3000, 
+      "suggested_minimum": 100, 
+      "suggested_maximum": 1200
+      }, 
+    "vit_base_patch32_224_learning_rate": {
+      "description": "Tunable parameter learning_rate in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "number", 
+      "minimum": 0.001, 
+      "maximum": 1, 
+      "suggested_minimum": 0.005, 
+      "suggested_maximum": 0.05
+      }, 
+    "vit_base_patch32_224_max_depth": {
+      "description": "Tunable parameter max_depth in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 10, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 5
+      }, 
+    "vit_base_patch32_224_max_features": {
+      "description": "Tunable parameter max_features in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1100, 
+      "suggested_minimum": 20, 
+      "suggested_maximum": 220
+      }, 
+    "vit_base_patch32_224_min_samples_leaf": {
+      "description": "Tunable parameter min_samples_leaf in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1000, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 25
+      }, 
+    "vit_base_patch32_224_min_samples_split": {
+      "description": "Tunable parameter min_samples_split in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "integer", 
+      "minimum": 2, 
+      "maximum": 1000, 
+      "suggested_minimum": 10, 
+      "suggested_maximum": 50
+      }, 
+    "vit_base_patch32_224_n_estimators": {
+      "description": "Tunable parameter n_estimators in sklearn Gradient Boosting Classifier for model architecture classification:vit_base_patch32_224", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 3000, 
+      "suggested_minimum": 100, 
+      "suggested_maximum": 1200
+      }, 
+    "mobilenet_v2_learning_rate": {
+      "description": "Tunable parameter learning_rate in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "number", 
+      "minimum": 0.001, 
+      "maximum": 1, 
+      "suggested_minimum": 0.005, 
+      "suggested_maximum": 0.05
+      }, 
+    "mobilenet_v2_max_depth": {
+      "description": "Tunable parameter max_depth in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 10, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 5
+      }, 
+    "mobilenet_v2_max_features": {
+      "description": "Tunable parameter max_features in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1100, 
+      "suggested_minimum": 20, 
+      "suggested_maximum": 220
+      }, 
+    "mobilenet_v2_min_samples_leaf": {
+      "description": "Tunable parameter min_samples_leaf in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 1000, 
+      "suggested_minimum": 2, 
+      "suggested_maximum": 25
+      }, 
+    "mobilenet_v2_min_samples_split": {
+      "description": "Tunable parameter min_samples_split in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "integer", 
+      "minimum": 2, 
+      "maximum": 1000, 
+      "suggested_minimum": 10, 
+      "suggested_maximum": 50
+      }, 
+    "mobilenet_v2_n_estimators": {
+      "description": "Tunable parameter n_estimators in sklearn Gradient Boosting Classifier for model architecture classification:mobilenet_v2", 
+      "type": "integer", 
+      "minimum": 1, 
+      "maximum": 3000, 
+      "suggested_minimum": 100, 
+      "suggested_maximum": 1200}
+  }
 }
