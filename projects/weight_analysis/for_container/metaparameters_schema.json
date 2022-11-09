@@ -3,10 +3,10 @@
   "title": "Trojan Detection Container (ICSI) - currently no metaparameter included",
   "technique": "Feature Extraction - weight analysis",
   "technique_description": "Extracting statistics from parameters and eigen values for each model and perform data augmentation for vit and mobilenet model features; Training the features on the tuned Gradient Boosting Classifiers.",
-  "technique_changes": "Changed the mixup data applicable for all three model architectures",
-  "commit_id": "0af29748b3d26fd2d2f99fbdfee705642aa43ba8",
+  "technique_changes": "Restructure the code, mainly for specifiying configuration mode",
+  "commit_id": "",
   "repo_name": "https://github.com/jsong2333333/round-11.git",
-  "required": [],
+  "required": ["augment_train_data", "automatic_training"],
   "additionalProperties": false,
   "type": "object",
   "properties": {
