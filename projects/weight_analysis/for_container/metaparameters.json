@@ -1,1 +1,22 @@
-{}
+{
+    "augment_train_data": true,
+    "automatic_training": false,
+    "mobilenet_v2_learning_rate": 0.01, 
+    "mobilenet_v2_max_depth": 4, 
+    "mobilenet_v2_max_features": 112, 
+    "mobilenet_v2_min_samples_leaf": 16, 
+    "mobilenet_v2_min_samples_split": 34, 
+    "mobilenet_v2_n_estimators": 650, 
+    "vit_base_patch32_224_learning_rate": 0.01, 
+    "vit_base_patch32_224_max_depth": 3, 
+    "vit_base_patch32_224_max_features": 32, 
+    "vit_base_patch32_224_min_samples_leaf": 4, 
+    "vit_base_patch32_224_min_samples_split": 40, 
+    "vit_base_patch32_224_n_estimators": 750, 
+    "resnet50_learning_rate": 0.015, 
+    "resnet50_max_depth": 3, 
+    "resnet50_max_features": 120, 
+    "resnet50_min_samples_leaf": 16, 
+    "resnet50_min_samples_split": 24, 
+    "resnet50_n_estimators": 900
+}
