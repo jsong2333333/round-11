@@ -1,0 +1,27 @@
+Bootstrap: docker
+From: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-runtime
+
+%files
+    ./classifier.py /
+    ./feature_extractor.py /
+    ./environment.yml /
+    ./metaparameters.json /
+    ./metaparameters_schema.json /
+    ./learned_parameters /
+
+
+%post
+    apt-get update && apt-get install -y git 
+    apt-get install -y libenchant-dev
+    apt-get install libgomp1
+    apt-get install -y default-jre
+    export PATH="$PATH:/opt/conda/bin"
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> $SINGULARITY_ENVIRONMENT
+    echo "conda activate $(head -1 environment.yml | cut -d' ' -f2)" >> $SINGULARITY_ENVIRONMENT
+
+    /opt/conda/bin/conda env create -f /environment.yml
+    . /opt/conda/bin/activate tri_inv
+
+
+%runscript
+    exec python3 /classifier.py "$@"
