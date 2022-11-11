@@ -11,6 +11,7 @@ from sklearn.model_selection import GridSearchCV
 import joblib
 import feature_extractor as fe
 
+# There's a difference in the filepath when loading data from learned_parameter folder in the container, deleting '.' in './learned_parameters'
 
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
 TUNABLE_PARAMS = ['learning_rate', 'n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'max_features']
@@ -100,11 +101,13 @@ def configure(output_parameters_dirpath,
     if AUTOMATIC_TRAINING:
         logging.info('Currently auto-tuning only learining_rate, n_estimator, max_depth and max_features.')
 
+    output_metaparameter = {'augment_train_data': AUGMENT_TRAIN_DATA, 'automatic_training':AUTOMATIC_TRAINING}
+
     for ma, (X, y) in feature_dict.items():
         logging.info(f'Tuning classifier for {ma}')
         _, counts = np.unique(y, return_counts=True)
         try:
-            recofig_clf = None
+            recofig_clf, metaparams = None, None
             if AUTOMATIC_TRAINING:
                 pipe = Pipeline(steps=[('gbm', GradientBoostingClassifier())])
                 
@@ -116,6 +119,7 @@ def configure(output_parameters_dirpath,
                 gsearch.fit(X, y)
                 
                 recofig_clf = gsearch.best_estimator_
+                metaparams = gsearch.best_params_
             else:
                 if len(counts) != 2:
                     logging.info(f'Not enough classes are provided for fitting the classifier for model architecture {ma}.')
@@ -123,10 +127,18 @@ def configure(output_parameters_dirpath,
                 param_args = {param: config_json_file[f'{ma}_{param}'] for param in TUNABLE_PARAMS}
                 recofig_clf = GradientBoostingClassifier(**param_args)
                 recofig_clf.fit(X, y)
+                metaparams = param_args
 
             joblib.dump(recofig_clf, os.path.join(output_parameters_dirpath, f'{ma}_clf.joblib'))
+            for k, v in metaparams.items():
+                if k in TUNABLE_PARAMS:
+                    output_metaparameter[f'{ma}_{k}'] = v
         except:
             logging.info(f'Problem encountered when parsing parameters or training classifier for model architecture {ma}.')
+    
+    logging.info(f'Saving new metaparameters to directory {output_parameters_dirpath}.')
+    with open(os.path.join(output_parameters_dirpath, 'metaparameters.json'), 'w') as outfile:
+        json.dump(output_metaparameter, outfile)
 
 
 if __name__ == '__main__':
