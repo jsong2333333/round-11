@@ -131,8 +131,10 @@ def configure(output_parameters_dirpath,
 
             joblib.dump(recofig_clf, os.path.join(output_parameters_dirpath, f'{ma}_clf.joblib'))
             for k, v in metaparams.items():
-                if k[5:] in TUNABLE_PARAMS:
-                    output_metaparameter[f'{ma}_{k[5:]}'] = v
+                if AUTOMATIC_TRAINING:
+                    k = k[5:]
+                if k in TUNABLE_PARAMS:
+                    output_metaparameter[f'{ma}_{k}'] = v
         except:
             logging.info(f'Problem encountered when parsing parameters or training classifier for model architecture {ma}.')
     
