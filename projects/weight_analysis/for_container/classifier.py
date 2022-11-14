@@ -101,7 +101,7 @@ def configure(output_parameters_dirpath,
     if AUTOMATIC_TRAINING:
         logging.info('Currently auto-tuning only learining_rate, n_estimator, max_depth and max_features.')
 
-    output_metaparameter = {'augment_train_data': AUGMENT_TRAIN_DATA, 'automatic_training':AUTOMATIC_TRAINING}
+    output_metaparameter = {'augment_train_data': AUGMENT_TRAIN_DATA, 'automatic_training': AUTOMATIC_TRAINING}
 
     for ma, (X, y) in feature_dict.items():
         logging.info(f'Tuning classifier for {ma}')
@@ -131,8 +131,8 @@ def configure(output_parameters_dirpath,
 
             joblib.dump(recofig_clf, os.path.join(output_parameters_dirpath, f'{ma}_clf.joblib'))
             for k, v in metaparams.items():
-                if k in TUNABLE_PARAMS:
-                    output_metaparameter[f'{ma}_{k}'] = v
+                if k[5:] in TUNABLE_PARAMS:
+                    output_metaparameter[f'{ma}_{k[5:]}'] = v
         except:
             logging.info(f'Problem encountered when parsing parameters or training classifier for model architecture {ma}.')
     

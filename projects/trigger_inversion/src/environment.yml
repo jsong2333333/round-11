@@ -1,4 +1,4 @@
-name: try
+name: tri_inv
 channels:
   - fastai
   - conda-forge
