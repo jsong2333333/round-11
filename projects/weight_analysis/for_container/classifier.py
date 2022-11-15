@@ -124,7 +124,7 @@ def configure(output_parameters_dirpath,
                 if len(counts) != 2:
                     logging.info(f'Not enough classes are provided for fitting the classifier for model architecture {ma}.')
                     continue
-                param_args = {param: config_json_file[f'{ma}_{param}'] for param in TUNABLE_PARAMS}
+                param_args = {k[len(ma)+1:]:v for k, v in config_json_file.items() if k.startswith(ma)}
                 recofig_clf = GradientBoostingClassifier(**param_args)
                 recofig_clf.fit(X, y)
                 metaparams = param_args
