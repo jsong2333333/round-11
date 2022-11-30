@@ -18,11 +18,11 @@ METADATA_FILEPATH = '/scratch/data/TrojAI/image-classification-sep2022-train/MET
 MODEL_ARCH = ['classification:' + arch for arch in ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']]
 NUM_MODEL = 288
 OUTPUT_FILEDIR = '/scratch/jialin/image-classification-sep2022/projects/trigger_inversion/extracted_source/'
-EXTRACTED_FILEDIR = '/scratch/jialin/image-classification-sep2022/projects/trigger_inversion/extracted_source/sample_image_trigger'
+EXTRACTED_FILEDIR = '/scratch/jialin/image-classification-sep2022/projects/trigger_inversion/extracted_source/'
 COLOR_CHANNEL, RESOLUTION = 3, 256
 METADATA = pd.read_csv(METADATA_FILEPATH)
-# with open(os.path.join(EXTRACTED_FILEDIR, 'class_to_model.json'), 'r') as outfile:
-#     CLASS_TO_MODEL = json.load(outfile)
+with open(os.path.join(EXTRACTED_FILEDIR, 'class_to_model.json'), 'r') as outfile:
+    CLASS_TO_MODEL = json.load(outfile)
 
 def num_to_model_id(num):
     return 'id-' + str(100000000+num)[1:]
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     logging.info(f"testing asr of model {model_id}")
 
-    with open(os.path.join(EXTRACTED_FILEDIR, f'trigger_dict_{model_id}.json'), 'r') as outfile:
+    with open(os.path.join(EXTRACTED_FILEDIR, 'sample_image_trigger', f'trigger_dict_{model_id}.json'), 'r') as outfile:
         triggers = json.load(outfile)
     with open(os.path.join(MODEL_FILEDIR, model_id, 'fg_class_translation.json'), 'r') as outfile:
         model_fg_class_trans = json.load(outfile)
@@ -74,6 +74,7 @@ if __name__ == '__main__':
                 label_to_clean_images[label] = [clean_image]
     for k, v in label_to_clean_images.items():
         label_to_clean_images[k] = torch.stack(v, dim=0)
+
 
     all_poisoned_images, all_target_labels, all_source_labels = [], [], []
     for source_class, clean_images in label_to_clean_images.items():
