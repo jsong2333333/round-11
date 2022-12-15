@@ -1,9 +1,10 @@
 name: round_11
 channels:
+  - fastai
   - conda-forge
   - pytorch
-  - defaults
   - anaconda
+  - defaults
 dependencies:
   - python=3.9
   - jsonschema
@@ -12,7 +13,7 @@ dependencies:
   - pytorch=1.12
   - cudatoolkit=11.3
   - opencv
-  - timm
+  - timm=0.6.7
   - scikit-learn=1.1.1
   - transformers
   - pandas

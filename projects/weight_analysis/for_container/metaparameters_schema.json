@@ -4,7 +4,7 @@
   "technique": "Weight Analysis + Titration Analysis via Trigger Insertion",
   "technique_description": "Extracting statistics from parameters and eigen values for each model; Performing brute force trigger inversion on the models; Training the features on the tuned Gradient Boosting Classifiers.",
   "technique_changes": "Changing the strategy target to polygon triggers to make the evaluation more time-efficient",
-  "commit_id": "",
+  "commit_id": "a15c7e0c69a10cb392bdc95c9bd86dae6f74873f",
   "repo_name": "https://github.com/jsong2333333/round-11.git",
   "required": ["augment_train_data", "automatic_training"],
   "additionalProperties": false,

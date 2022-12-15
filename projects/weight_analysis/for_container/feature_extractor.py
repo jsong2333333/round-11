@@ -159,7 +159,7 @@ def _get_eigen_features(model):
     return params
 
 
-def _get_loss_features(model, example_filedir, all_train_triggers, rand_num_for_filter, device, batch_size=20):
+def _get_loss_features(model, example_filedir, all_train_triggers, rand_num_for_filter, device, batch_size=25):
     model = model.to(device)
     model.eval()
     trigger_size, filter_size = all_train_triggers.shape[0], rand_num_for_filter.shape[0]

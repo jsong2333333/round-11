@@ -1,3 +1,0 @@
-This is a directory for storing parameter data (model weights, etc.) to be used when evaluating models.
-The initial directory contains three classifiers that are trained on the training dataset and the numpy files of features and corresponding labels extracted from training dataset.
-More classifiers might be involved from data in configuration mode. The container would prioritize the newly built classifiers from the configuration mode.
