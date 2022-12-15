@@ -14,35 +14,39 @@ import feature_extractor as fe
 # There's a difference in the filepath when loading data from learned_parameter folder in the container, deleting '.' in './learned_parameters'
 
 MODEL_ARCH = ['resnet50', 'vit_base_patch32_224', 'mobilenet_v2']
-TUNABLE_PARAMS = ['learning_rate', 'n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'max_features']
+ORIGINAL_LEARNED_PARAM_DIR = './learned_parameters'
 
-WEIGHT_LENGTH_TO_MODEL_ARCH = {978: 'resnet50', 924: 'vit_base_patch32_224', 960:'mobilenet_v2'}
-MODEL_ARCH_TO_LENGTH = {'resnet50': 1248, 'vit_base_patch32_224': 1184, 'mobilenet_v2': 1225}
+TUNABLE_PARAMS = ['learning_rate', 'n_estimators', 'max_depth', 'min_samples_split', 'min_samples_leaf', 'max_features']
 param_grid = {'gbm__learning_rate':np.arange(.005, .0251, .005), 'gbm__n_estimators':range(300, 1001, 100), 'gbm__max_depth':range(2, 6), 'gbm__max_features':range(20, 121, 10)}
 
 
 def weight_analysis_detector(model_filepath,
-                            result_filepath,
-                            learned_parameters_dirpath):
+                             examples_dirpath,
+                             result_filepath,
+                             learned_parameters_dirpath):
 
     logging.info('model_filepath = {}'.format(model_filepath))
+    logging.info('examples_dirpath = {}'.format(examples_dirpath))
     logging.info('result_filepath = {}'.format(result_filepath))
     logging.info('Using parameters_dirpath = {}'.format(learned_parameters_dirpath))
 
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # logging.info("Using compute device: {}".format(device))
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logging.info("Using compute device: {}".format(device))
 
     # extract class and features from predict model
-    predict_model_class, predict_model_features = fe.get_predict_model_features_and_class(model_filepath)
+    logging.info("Starting feature extraction")
+    predict_model_class, predict_model_features = fe.get_predict_model_features_and_class(model_filepath, examples_dirpath, ORIGINAL_LEARNED_PARAM_DIR, device)
     predict_model_features = np.asarray([predict_model_features])
 
+    logging.info('Starting to load classifier')
     potential_reconfig_model_filepath = os.path.join(learned_parameters_dirpath, f'{predict_model_class}_clf.joblib')
     if os.path.exists(potential_reconfig_model_filepath):
         clf = joblib.load(potential_reconfig_model_filepath)
     else:
         logging.info('Using original classifier')
-        clf = joblib.load(f'./learned_parameters/original_{predict_model_class}_clf.joblib')
+        clf = joblib.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, f'original_{predict_model_class}_clf.joblib'))
     
+    logging.info('Starting to detect trojan probability')
     try:
         trojan_probability = clf.predict_proba(predict_model_features)
     except:
@@ -60,7 +64,6 @@ def weight_analysis_detector(model_filepath,
 def configure(output_parameters_dirpath,
               configure_models_dirpath,
               config_json_file):
-
     logging.info('Configuring detector parameters with models from ' + configure_models_dirpath)
     os.makedirs(output_parameters_dirpath, exist_ok=True)
     logging.info('Saving reconfigured models to ' + output_parameters_dirpath)
@@ -69,9 +72,9 @@ def configure(output_parameters_dirpath,
     feature_dict = {}
     for ma in MODEL_ARCH:
         try:
-            potential_features = fe.get_features_and_labels_by_model_class(configure_models_dirpath, ma)
+            potential_features = fe.get_features_and_labels_by_model_class(configure_models_dirpath, ma, ORIGINAL_LEARNED_PARAM_DIR, device)
             X, y = potential_features['X'], potential_features['y']
-            if X.shape[0] != 0 and X.shape[0] == y.shape[0] and X.shape[1] == MODEL_ARCH_TO_LENGTH[ma]:
+            if X.shape[0] != 0 and X.shape[0] == y.shape[0] and X.shape[1] == fe.MODEL_ARCH_FOR_LOSS_CALCULATION[ma]:
                 feature_dict[ma] = (X, y)
             else:
                 logging.info(f'Mismatch or no data found for model architechture {ma}, not saved')
@@ -84,7 +87,7 @@ def configure(output_parameters_dirpath,
     if AUGMENT_TRAIN_DATA:
         for ma in MODEL_ARCH:
             try:
-                train_X, train_y = np.load(f'./learned_parameters/train_X_{ma}.npy'), np.load(f'./learned_parameters/train_y_{ma}.npy')
+                train_X, train_y = np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, f'train_X_{ma}.npy')), np.load(os.path.join(ORIGINAL_LEARNED_PARAM_DIR, f'train_y_{ma}.npy'))
                 new_X, new_y = feature_dict[ma]
                 if train_X.shape[1] == new_X.shape[1] and train_X.shape[0] == train_y.shape[0]:
                     feature_dict[ma] = (np.concatenate((new_X, train_X), axis=0), np.concatenate((new_y, train_y), axis=0))
@@ -183,6 +186,7 @@ if __name__ == '__main__':
 
     if not args.configure_mode:
         if (args.model_filepath is not None and
+            args.examples_dirpath is not None and
             args.result_filepath is not None and
             args.learned_parameters_dirpath is not None):
 
@@ -190,8 +194,9 @@ if __name__ == '__main__':
             logging.info('Calling the weight analysis classifier')
 
             weight_analysis_detector(args.model_filepath,
-                                    args.result_filepath,
-                                    args.learned_parameters_dirpath)
+                                     args.examples_dirpath,
+                                     args.result_filepath,
+                                     args.learned_parameters_dirpath)
         else:
             logging.info("Required Evaluation-Mode parameters missing!")
     else:

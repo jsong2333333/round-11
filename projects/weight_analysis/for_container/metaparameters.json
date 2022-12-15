@@ -1,6 +1,6 @@
 {
     "augment_train_data": false,
-    "automatic_training": false,
+    "automatic_training": true,
     "mobilenet_v2_learning_rate": 0.011, 
     "mobilenet_v2_max_depth": 4, 
     "mobilenet_v2_max_features": 96, 
