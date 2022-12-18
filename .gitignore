@@ -1,9 +1,6 @@
-projects/weight_analysis/src/
 projects/weight_analysis/models/
-projects/weight_analysis/src/jsonschema_checker.py
 projects/weight_analysis/extracted_source/first_trial_triggers/all_train_triggers.npy
 projects/weight_analysis/extracted_source/first_trial_triggers/rand_num_for_filter.npy
-projects/weight_analysis/for_container/learned_parameters/
 projects/weight_analysis/for_container/__pycache__
 projects/weight_analysis/for_container/.hypothesis
 projects/trigger_inversion/extracted_source/sample_image_trigger
